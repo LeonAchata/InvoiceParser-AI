@@ -1,183 +1,242 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Procesador de Facturas - Demo</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InvoiceParser AI</title>
+  <meta name="description" content="Drop an invoice, receipt or ticket in any format and watch AI fill the form.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    try { const t = localStorage.getItem('theme'); if (t) document.documentElement.dataset.theme = t; } catch (_) {}
+  </script>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>Procesador de Facturas</h1>
-            <p>Extrae datos automáticamente o completa manualmente</p>
-        </div>
+  <!-- Icon sprite (Lucide, ISC license) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></symbol>
+      <symbol id="i-file" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></symbol>
+      <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M9.94 15.5A2 2 0 0 0 8.5 14.06l-6.14-1.58a.5.5 0 0 1 0-.96L8.5 9.94A2 2 0 0 0 9.94 8.5l1.58-6.14a.5.5 0 0 1 .96 0L14.06 8.5A2 2 0 0 0 15.5 9.94l6.14 1.58a.5.5 0 0 1 0 .96L15.5 14.06a2 2 0 0 0-1.44 1.44l-1.58 6.14a.5.5 0 0 1-.96 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+      <symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+      <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+      <symbol id="i-x-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></symbol>
+      <symbol id="i-sheet" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 13h2"/><path d="M14 13h2"/><path d="M8 17h2"/><path d="M14 17h2"/></symbol>
+      <symbol id="i-braces" viewBox="0 0 24 24"><path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1"/><path d="M16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1"/></symbol>
+      <symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+      <symbol id="i-save" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></symbol>
+      <symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+      <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></symbol>
+      <symbol id="i-calc" viewBox="0 0 24 24"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></symbol>
+      <symbol id="i-rotate" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></symbol>
+      <symbol id="i-github" viewBox="0 0 24 24"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></symbol>
+    </defs>
+  </svg>
 
-        <div class="main-content">
-            <!-- Sección de Upload -->
-            <div class="upload-section">
-                <div class="upload-area" id="uploadArea">
-                    <div class="upload-icon">📄</div>
-                    <div class="upload-text">
-                        <strong>Arrastra tu factura aquí</strong><br>
-                        o haz clic para seleccionar<br>
-                        <small>Solo archivos PDF</small>
-                    </div>
-                </div>
-                
-                <input type="file" id="fileInput" accept=".pdf" />
-                
-                <button class="btn" onclick="document.getElementById('fileInput').click()">
-                    🔎 Seleccionar Archivo
-                </button>
-
-                <div class="loading-spinner" id="loadingSpinner"></div>
-                
-                <div class="status-indicator" id="statusIndicator"></div>
-
-                <!-- Progress indicator -->
-                <div class="progress-container" id="progressContainer" style="display: none;">
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="progressFill"></div>
-                    </div>
-                    <div class="progress-text" id="progressText">Iniciando procesamiento...</div>
-                </div>
-            </div>
-
-            <!-- Sección del Formulario -->
-            <div class="form-section">
-                <h3 style="margin-bottom: 25px; color: #495057;">Datos de la Factura</h3>
-                
-                <form id="facturaForm">
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="codigo">DNI o RUC</label>
-                            <input type="text" id="codigo" name="codigo" placeholder="Ej: 20123456789">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="distrito">Distrito</label>
-                            <input type="text" id="distrito" name="distrito" placeholder="Ej: SAN ISIDRO">
-                        </div>
-
-                        <div class="form-group full-width">
-                            <label for="nombre_empresa">Nombre / Empresa</label>
-                            <input type="text" id="nombre_empresa" name="nombre_empresa" placeholder="Ej: GARCIA LOPEZ, JUAN CARLOS">
-                        </div>
-
-                        <div class="form-group full-width">
-                            <label for="direccion">Dirección</label>
-                            <input type="text" id="direccion" name="direccion" placeholder="Ej: AV. JAVIER PRADO ESTE 123">
-                        </div>
-
-                        <!-- NUEVO: Sección de Items -->
-                        <div class="form-group full-width">
-                            <label style="display: flex; justify-content: space-between; align-items: center;">
-                                <span>Items de la Factura</span>
-                                <button type="button" class="btn-small" onclick="addItemRow()">+ Agregar Item</button>
-                            </label>
-                            
-                            <div class="items-table-container">
-                                <table class="items-table" id="itemsTable">
-                                    <thead>
-                                        <tr>
-                                            <th style="width: 40%;">Descripción</th>
-                                            <th style="width: 15%;">Cantidad</th>
-                                            <th style="width: 20%;">Precio Unit.</th>
-                                            <th style="width: 20%;">Subtotal</th>
-                                            <th style="width: 5%;"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="itemsTableBody">
-                                        <!-- Los items se agregarán dinámicamente aquí -->
-                                        <tr class="item-row" data-index="0">
-                                            <td>
-                                                <input type="text" name="item_descripcion_0" placeholder="Ej: SERVICIO DE CONSULTORIA" class="table-input">
-                                            </td>
-                                            <td>
-                                                <input type="number" name="item_cantidad_0" placeholder="1" step="1" min="1" class="table-input" onchange="calculateItemSubtotal(0)">
-                                            </td>
-                                            <td>
-                                                <input type="number" name="item_precio_0" placeholder="1500.00" step="0.01" class="table-input" onchange="calculateItemSubtotal(0)">
-                                            </td>
-                                            <td>
-                                                <input type="number" name="item_subtotal_0" placeholder="1500.00" step="0.01" class="table-input" readonly>
-                                            </td>
-                                            <td>
-                                                <button type="button" class="btn-delete" onclick="removeItemRow(0)" title="Eliminar">×</button>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <!-- NUEVO: Forma de Pago -->
-                        <div class="form-group">
-                            <label for="forma_pago">Forma de Pago</label>
-                            <select id="forma_pago" name="forma_pago">
-                                <option value="">Seleccionar...</option>
-                                <option value="CONTADO">Contado</option>
-                                <option value="CREDITO">Crédito</option>
-                                <option value="TARJETA">Tarjeta</option>
-                                <option value="EFECTIVO">Efectivo</option>
-                                <option value="TRANSFERENCIA">Transferencia</option>
-                                <option value="YAPE">Yape</option>
-                                <option value="PLIN">Plin</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="moneda">Moneda</label>
-                            <select id="moneda" name="moneda">
-                                <option value="">Seleccionar...</option>
-                                <option value="PEN">PEN (Soles)</option>
-                                <option value="USD">USD (Dólares)</option>
-                                <option value="EUR">EUR (Euros)</option>
-                                <option value="GBP">GBP (Libras Esterlinas)</option>
-                                <option value="JPY">JPY (Yenes)</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="subtotal">Subtotal</label>
-                            <input type="number" id="subtotal" name="subtotal" placeholder="Ej: 1500.00" step="0.01" readonly>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="igv">IGV (18%)</label>
-                            <input type="number" id="igv" name="igv" placeholder="Ej: 270.00" step="0.01" readonly>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="porcentaje_detraccion">% Detracción</label>
-                            <input type="number" id="porcentaje_detraccion" name="porcentaje_detraccion" placeholder="Ej: 4.00" step="0.01" min="0" max="100">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="monto_detraccion">Monto Detracción</label>
-                            <input type="number" id="monto_detraccion" name="monto_detraccion" placeholder="Ej: 60.00" step="0.01">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="total">Total</label>
-                            <input type="number" id="total" name="total" placeholder="Ej: 1770.00" step="0.01" readonly>
-                        </div>
-                    </div>
-
-                    <div class="actions">
-                        <button type="button" class="btn btn-secondary" onclick="clearForm()">
-                            Limpiar
-                        </button>
-                        <button type="submit" class="btn">
-                            Guardar Datos
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+  <header class="topbar">
+    <a class="brand" href="/">
+      <span class="brand-mark"><svg><use href="#i-sparkles"/></svg></span>
+      <span>InvoiceParser <b>AI</b></span>
+    </a>
+    <div class="topbar-actions">
+      <span class="status-pill" id="apiStatus" title="API status"><span class="dot"></span><span class="label">Connecting…</span></span>
+      <button class="icon-btn" id="historyBtn" title="History" aria-label="Open history"><svg><use href="#i-history"/></svg></button>
+      <button class="icon-btn" id="themeBtn" title="Toggle theme" aria-label="Toggle theme"><svg><use href="#i-moon"/></svg></button>
+      <a class="icon-btn" href="https://github.com/LeonAchata/InvoiceParser-AI" target="_blank" rel="noopener" title="GitHub" aria-label="GitHub"><svg><use href="#i-github"/></svg></a>
     </div>
+  </header>
 
-    <script src="script.js"></script>
+  <div class="banner" id="configBanner" hidden>
+    <svg><use href="#i-alert"/></svg>
+    <span><b>OPENAI_API_KEY</b> is not configured on the server. Add it to <code>.env</code> and restart to enable extraction.</span>
+  </div>
+
+  <main class="layout">
+    <!-- LEFT: source document -->
+    <section class="column column-left">
+      <div class="card upload-card" id="uploadCard">
+        <label class="dropzone" id="dropzone" tabindex="0">
+          <input type="file" id="fileInput" hidden>
+          <div class="dropzone-icon"><svg><use href="#i-upload"/></svg></div>
+          <div class="dropzone-title">Drop an invoice, receipt or ticket</div>
+          <div class="dropzone-sub">or <span class="link">browse files</span> · paste with <kbd>Ctrl</kbd> + <kbd>V</kbd></div>
+          <div class="format-chips" id="formatChips"></div>
+        </label>
+        <div class="samples" id="samplesBox" hidden>
+          <span class="samples-label">No file at hand? Try a sample:</span>
+          <div class="samples-list" id="samplesList"></div>
+        </div>
+      </div>
+
+      <div class="card doc-card" id="docCard" hidden>
+        <div class="doc-head">
+          <div class="doc-file">
+            <span class="file-badge" id="fileBadge">PDF</span>
+            <div class="doc-file-text">
+              <div class="doc-name" id="docName">document.pdf</div>
+              <div class="doc-meta" id="docMeta"></div>
+            </div>
+          </div>
+          <button class="btn btn-ghost btn-sm" id="newFileBtn"><svg><use href="#i-rotate"/></svg>New file</button>
+        </div>
+
+        <ol class="stepper" id="stepper"></ol>
+        <div class="error-box" id="errorBox" hidden></div>
+
+        <div class="tabs" role="tablist">
+          <button class="tab active" data-tab="preview" role="tab">Preview</button>
+          <button class="tab" data-tab="text" role="tab">Extracted text</button>
+          <button class="tab" data-tab="json" role="tab">JSON</button>
+        </div>
+        <div class="tab-panels">
+          <div class="tab-panel active" data-panel="preview" id="previewPanel"></div>
+          <div class="tab-panel" data-panel="text"><pre class="code" id="textPanel">Text will appear here after processing.</pre></div>
+          <div class="tab-panel" data-panel="json"><pre class="code" id="jsonPanel">{}</pre></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT: auto-filled form -->
+    <section class="column column-right">
+      <form class="card form-card" id="invoiceForm" autocomplete="off" novalidate>
+        <div class="form-head">
+          <div>
+            <h1>Extracted data</h1>
+            <p class="muted" id="formSubtitle">Upload a document and watch the form fill itself.</p>
+          </div>
+          <div class="score" id="scoreRing" hidden title="Share of key fields found in the document">
+            <svg viewBox="0 0 36 36"><circle class="track" cx="18" cy="18" r="15.5"/><circle class="value" cx="18" cy="18" r="15.5"/></svg>
+            <span id="scoreText">0%</span>
+          </div>
+        </div>
+
+        <div class="checks" id="checksBox" hidden>
+          <div class="checks-title">Validation</div>
+          <ul id="checksList"></ul>
+        </div>
+
+        <fieldset class="section">
+          <legend>Document</legend>
+          <div class="grid">
+            <label class="field"><span>Type</span>
+              <select data-field="document_type">
+                <option value="">—</option>
+                <option value="INVOICE">Invoice (Factura)</option>
+                <option value="RECEIPT">Receipt (Boleta)</option>
+                <option value="CREDIT_NOTE">Credit note</option>
+                <option value="DEBIT_NOTE">Debit note</option>
+                <option value="TICKET">Ticket</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </label>
+            <label class="field"><span>Number</span><input data-field="document_number" placeholder="F001-00012345"></label>
+            <label class="field"><span>Issue date</span><input type="date" data-field="issue_date"></label>
+            <label class="field"><span>Due date</span><input type="date" data-field="due_date"></label>
+            <label class="field"><span>Currency</span>
+              <input data-field="currency" list="currencies" placeholder="PEN" maxlength="3" class="upper">
+              <datalist id="currencies"><option value="PEN"><option value="USD"><option value="EUR"><option value="GBP"><option value="MXN"><option value="COP"><option value="CLP"><option value="ARS"><option value="BRL"></datalist>
+            </label>
+            <label class="field"><span>Payment method</span>
+              <input data-field="payment_method" list="payments" placeholder="CASH" class="upper">
+              <datalist id="payments"><option value="CASH"><option value="CREDIT"><option value="CARD"><option value="TRANSFER"><option value="YAPE"><option value="PLIN"><option value="OTHER"></datalist>
+            </label>
+          </div>
+        </fieldset>
+
+        <div class="parties">
+          <fieldset class="section">
+            <legend>Issuer</legend>
+            <div class="grid grid-1">
+              <label class="field"><span>Tax ID (RUC / DNI)</span><input data-field="issuer.tax_id" placeholder="20123456789" class="mono"></label>
+              <label class="field"><span>Name</span><input data-field="issuer.name" placeholder="Company S.A.C."></label>
+              <label class="field"><span>Address</span><input data-field="issuer.address"></label>
+              <label class="field"><span>City / district</span><input data-field="issuer.city"></label>
+            </div>
+          </fieldset>
+          <fieldset class="section">
+            <legend>Customer</legend>
+            <div class="grid grid-1">
+              <label class="field"><span>Tax ID (RUC / DNI)</span><input data-field="customer.tax_id" placeholder="10456789012" class="mono"></label>
+              <label class="field"><span>Name</span><input data-field="customer.name"></label>
+              <label class="field"><span>Address</span><input data-field="customer.address"></label>
+              <label class="field"><span>City / district</span><input data-field="customer.city"></label>
+            </div>
+          </fieldset>
+        </div>
+
+        <fieldset class="section" data-section="items">
+          <legend>Line items <span class="count" id="itemsCount">0</span></legend>
+          <div class="table-wrap">
+            <table class="items">
+              <thead><tr><th>Description</th><th class="num">Qty</th><th class="num">Unit price</th><th class="num">Amount</th><th></th></tr></thead>
+              <tbody id="itemsBody"></tbody>
+            </table>
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm" id="addItemBtn"><svg><use href="#i-plus"/></svg>Add line</button>
+        </fieldset>
+
+        <fieldset class="section">
+          <legend>
+            Totals
+            <button type="button" class="btn btn-ghost btn-xs" id="recalcBtn" title="Recompute subtotal, tax and total from the line items"><svg><use href="#i-calc"/></svg>Recalculate</button>
+          </legend>
+          <div class="grid grid-totals">
+            <label class="field"><span>Subtotal</span><input type="number" step="0.01" data-field="subtotal" class="num"></label>
+            <label class="field"><span>Discount</span><input type="number" step="0.01" data-field="discount" class="num"></label>
+            <label class="field"><span>Tax rate %</span><input type="number" step="any" data-field="tax_rate" class="num" placeholder="18"></label>
+            <label class="field"><span>Tax (IGV / VAT)</span><input type="number" step="0.01" data-field="tax" class="num"></label>
+            <label class="field"><span>Withholding %</span><input type="number" step="any" data-field="withholding.percentage" class="num" placeholder="Detracción"></label>
+            <label class="field"><span>Withholding amount</span><input type="number" step="0.01" data-field="withholding.amount" class="num"></label>
+            <label class="field field-total"><span>Total</span><input type="number" step="0.01" data-field="total" class="num"></label>
+          </div>
+        </fieldset>
+
+        <fieldset class="section">
+          <legend>Notes</legend>
+          <label class="field"><textarea data-field="notes" rows="2" placeholder="Anything else worth keeping"></textarea></label>
+        </fieldset>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-ghost" id="resetBtn">Clear</button>
+          <div class="spacer"></div>
+          <button type="button" class="btn btn-secondary" id="copyBtn" title="Copy JSON"><svg><use href="#i-copy"/></svg><span class="hide-sm">Copy</span></button>
+          <button type="button" class="btn btn-secondary" id="jsonBtn"><svg><use href="#i-braces"/></svg>JSON</button>
+          <button type="button" class="btn btn-secondary" id="excelBtn"><svg><use href="#i-sheet"/></svg>Excel</button>
+          <button type="submit" class="btn btn-primary" id="saveBtn"><svg><use href="#i-save"/></svg>Save</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <!-- History drawer -->
+  <div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
+  <aside class="drawer" id="historyDrawer" aria-hidden="true">
+    <div class="drawer-head">
+      <h2>Saved documents</h2>
+      <button class="icon-btn" id="closeDrawerBtn" aria-label="Close"><svg><use href="#i-x"/></svg></button>
+    </div>
+    <ul class="history-list" id="historyList"></ul>
+  </aside>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+
+  <template id="itemRowTpl">
+    <tr>
+      <td><input data-item="description" placeholder="Description"></td>
+      <td><input type="number" step="any" data-item="quantity" class="num"></td>
+      <td><input type="number" step="0.01" data-item="unit_price" class="num"></td>
+      <td><input type="number" step="0.01" data-item="amount" class="num"></td>
+      <td><button type="button" class="icon-btn icon-btn-sm remove-item" aria-label="Remove line"><svg><use href="#i-trash"/></svg></button></td>
+    </tr>
+  </template>
+
+  <script src="app.js"></script>
 </body>
 </html>

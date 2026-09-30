@@ -1,23 +1,23 @@
-# Python cache
+# Python
 __pycache__/
-**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
 
 # Environments
 .env
-
-# Virtual envs
 venv/
 .venv/
 env/
 
-facturas/
+# Runtime data
+data/
 temp/
+*.log
 
-# Byte-compiled / optimized / DLL files
-*.py[cod]
-*.so
-*.dylib
-
-# OS files
+# OS / editors
 .DS_Store
 Thumbs.db
+.vscode/
+.idea/

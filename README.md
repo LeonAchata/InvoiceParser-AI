@@ -1,269 +1,228 @@
-# InvoiceProcessing – AI-Powered Invoice Pipeline
+<div align="center">
 
-AI pipeline to process invoice PDFs, extract data with LLM, and deliver results ready to save or export to Excel. Includes API (FastAPI), lightweight frontend, and a pipeline orchestrated with LangGraph.
+# ✨ InvoiceParser AI
 
-## What does it do?
+**Drop an invoice, receipt or ticket in (almost) any format and watch an AI fill the form for you.**
 
-- Validates and reads invoice PDFs (up to 10 MB).
-- Extracts text from first pages using PyMuPDF/pdfplumber/PyPDF2 based on availability.
-- Cleans and normalizes the text.
-- Uses an LLM (OpenAI) with specialized prompts for Peruvian invoices and returns JSON with: customer data, items, payment method, currency, subtotal, VAT (IGV), total, and withholding (detracción).
-- Allows downloading an Excel file with results and saving to PostgreSQL (optional).
+PDF · scanned PDF · photos · Word · Excel · CSV · e-invoice XML · JSON · HTML · e-mails
 
-## Tech Stack
+[![CI](https://github.com/LeonAchata/InvoiceParser-AI/actions/workflows/ci.yml/badge.svg)](https://github.com/LeonAchata/InvoiceParser-AI/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
+![LangGraph](https://img.shields.io/badge/LangGraph-1C3C3C?logo=langchain&logoColor=white)
+![OpenAI](https://img.shields.io/badge/OpenAI_compatible-412991?logo=openai&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
 
-- **Backend**: FastAPI, Uvicorn
-- **Orchestration**: LangGraph (StateGraph + MemorySaver)
-- **LLM**: OpenAI (gpt-4o-mini by default)
-- **PDF**: PyMuPDF (fitz), pdfplumber, PyPDF2
-- **Data/Validation**: Pydantic, pydantic-settings
-- **DB**: asyncpg (PostgreSQL) – optional
-- **Excel**: openpyxl
-- **Frontend**: Vanilla HTML/CSS/JS
-- **Container**: Docker (multi-stage)
+<img src="docs/screenshot-light.png" alt="InvoiceParser AI — a photo of a receipt on the left, the auto-filled form with validation checks on the right" width="100%">
 
-## Architecture and Pipeline Flow
-
-File: `pipeline.py` (LangGraph)
-
-Sequential node flow:
-1) document_ingestion → 2) text_extraction → 3) text_cleaning → 4) llm → END
-
-### Nodes (folder `nodes/`):
-
-- **Node 1 – Ingestion** (`ingestion.py`)
-  - Validates existence, size (<= settings.max_pdf_size_mb), PDF integrity, and extractable text.
-  - Determines the most reliable extraction method (PyMuPDF/pdfplumber/PyPDF2) and stores metadata in `logging.debug_info`.
-
-- **Node 2 – Extraction** (`extraction.py`)
-  - Extracts text from up to 3 pages with the validated method.
-  - Saves raw text in `state.text_content.raw_text` and statistics.
-
-- **Node 3 – Cleaning** (`cleaning.py`)
-  - Normalizes uppercase and spaces; calculates cleaning metrics.
-  - Saves cleaned text in `state.text_content.cleaned_text`.
-
-- **Node 4 – LLM** (`llm.py`)
-  - Generates prompts (`models/prompts.py`) and calls OpenAI.
-  - Parses JSON and stores in `state.extracted_data`. Updates metrics and marks `status=COMPLETED`.
-
-## Pipeline State
-
-Main model: `models/state.py` (Pydantic)
-
-- **document_info**: file_path, filename, file_size
-- **text_content**: raw_text, cleaned_text
-- **processing_control**: processing_stage, status (PROCESSING/COMPLETED/FAILED)
-- **metrics**: tokens_used, processing_time, cost_estimate, llm_model
-- **quality**: confidence_score, completeness_score
-- **logging**: messages, errors, warnings, debug_info
-- **extracted_data**: dict with LLM result (customer, items, totals, withholding)
-
-### Configuration: `models/settings.py`
-
-- Reads `.env`. Required variables: `OPENAI_API_KEY` and `DATABASE_URL` (if using DB).
-- Others: `llm_model`, `llm_temperature`, PDF limits, etc.
-
-## API (FastAPI)
-
-File: `main.py`
-
-- **POST /upload**: Upload PDF. Returns `job_id` and initial status. Processing runs in background.
-- **GET /status/{job_id}**: Job status (PENDING/PROCESSING/COMPLETED/FAILED).
-- **GET /result/{job_id}**: Complete result when COMPLETED.
-- **POST /guardar-factura**: Saves invoice to PostgreSQL from frontend data. Requires DB.
-- **POST /guardar-factura-excel**: Generates and downloads Excel with submitted data.
-- **GET /facturas**: Lists saved invoices (paginated). Requires DB.
-
-### Notes:
-- App can start without DB; save/list endpoints will return 503 if no connection.
-- Dockerfile defines healthcheck to `/health`; add that endpoint or adjust healthcheck.
-
-## Lightweight Frontend
-
-Path: `frontend/`
-
-- **`index.html`**: Interface with drag-and-drop or PDF selection, progress bar, and editable form.
-- **`script.js`**: Calls API (`/upload`, `/status`, `/result`) and populates form with `extracted_data`. Allows Excel download via `/guardar-factura-excel`.
-- **`styles.css`**: Modern and responsive styles.
-
-**Usage**: Open `frontend/index.html` in browser with backend running at `http://localhost:8000` (CORS enabled for dev).
-
-## Requirements and Configuration
-
-### Prerequisites:
-- Python 3.11+
-- OpenAI API key (format `sk-...`)
-- PostgreSQL (optional, for persistence)
-
-### Minimum `.env` file in root:
-```env
-OPENAI_API_KEY=sk-XXXX
-DATABASE_URL=postgresql://user:pass@host:5432/dbname  # optional if not using DB
-TEMP_DIR=./temp
-LLM_MODEL=gpt-4o-mini
-```
-
-## Local Execution (Windows PowerShell)
-
-Install dependencies and start API:
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-```
-
-Open frontend:
-- Double-click `frontend/index.html` or serve with a static server.
-
-## Docker
-
-Build and run:
-```powershell
-docker build -t invoice-processing:latest .
-docker run -e OPENAI_API_KEY=sk-XXXX -e DATABASE_URL=postgresql://user:pass@host:5432/dbname -p 8000:8000 invoice-processing:latest
-```
-
-## Folder Structure (Summary)
-
-```
-.
-├── main.py                # FastAPI API
-├── pipeline.py            # LangGraph orchestration
-├── database.py            # Async PostgreSQL manager (optional)
-├── models/                # State, settings, prompts
-├── nodes/                 # Nodes: ingestion, extraction, cleaning, llm
-├── utils/                 # PDF, LLM, Excel, API helpers
-├── frontend/              # Simple UI (HTML/JS/CSS)
-├── requirements.txt       # Dependencies
-├── Dockerfile             # Deployment image
-└── temp/                  # Temporary files
-```
-
-## Notes and Limitations
-
-- Up to 3 pages per PDF are processed in current extraction (adjustable).
-- LLM responds only with JSON; if PDF has no extractable text, job fails with clear message.
-- For persistence, assumes schema with `facturas` and `factura_items` tables (create before using `guardar-factura`).
-
-## Use Cases
-
-- **Accounting automation**: Extract invoice data for accounting systems
-- **ERP integration**: Feed invoice data into ERP/CRM systems
-- **Document digitization**: Convert paper invoices to structured data
-- **Compliance**: Automated tax withholding calculation (Peruvian context)
-- **Audit trails**: Track and store invoice history in database
-
-## API Examples
-
-### Upload Invoice
-```bash
-curl -X POST "http://localhost:8000/upload" \
-  -F "file=@invoice.pdf"
-```
-
-Response:
-```json
-{
-  "job_id": "abc123",
-  "status": "PENDING",
-  "message": "Invoice uploaded successfully"
-}
-```
-
-### Check Status
-```bash
-curl "http://localhost:8000/status/abc123"
-```
-
-### Get Results
-```bash
-curl "http://localhost:8000/result/abc123"
-```
-
-Response:
-```json
-{
-  "status": "COMPLETED",
-  "extracted_data": {
-    "customer": {
-      "ruc": "20123456789",
-      "name": "ACME Corp",
-      "address": "Av. Example 123"
-    },
-    "items": [
-      {
-        "description": "Product A",
-        "quantity": 10,
-        "unit_price": 100.00,
-        "total": 1000.00
-      }
-    ],
-    "payment": {
-      "method": "Credit",
-      "currency": "PEN"
-    },
-    "totals": {
-      "subtotal": 1000.00,
-      "igv": 180.00,
-      "total": 1180.00,
-      "detraccion": 59.00
-    }
-  },
-  "metrics": {
-    "tokens_used": 1500,
-    "processing_time": 3.5,
-    "cost_estimate": 0.002
-  }
-}
-```
-
-## Troubleshooting
-
-### Error: "No extractable text found"
-- PDF is image-based (scanned). Solution: Add OCR support (Tesseract) or use vision-capable LLM.
-
-### Error: OpenAI "insufficient_quota"
-- No credits in OpenAI account. Solution: Add credits or use alternative provider.
-
-### Error: Database connection failed
-- PostgreSQL not running or wrong credentials. Solution: Check `DATABASE_URL` or run without DB (remove DB endpoints).
-
-### PDF too large
-- Exceeds 10 MB limit. Solution: Increase `MAX_PDF_SIZE_MB` in settings or compress PDF.
-
-## Future Enhancements
-
-- [ ] OCR support for scanned documents
-- [ ] Multi-language support beyond Spanish
-- [ ] Batch processing for multiple invoices
-- [ ] Alternative LLM providers (Anthropic, local models)
-- [ ] Invoice template recognition
-- [ ] Duplicate invoice detection
-- [ ] Integration with accounting software APIs
-
-## Contributing
-
-Contributions are welcome! Please:
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## License
-
-This is a personal learning project. Free to use for educational purposes.
-
-## Author
-
-**Leon Achata**
-- GitHub: [@LeonAchata](https://github.com/LeonAchata)
+</div>
 
 ---
 
-**Happy coding! 🚀**
+## What it does
 
-*AI-Powered Invoice Processing with LangGraph - Production Ready*
+1. **You drop a file** — drag & drop, file picker, or just paste a screenshot with <kbd>Ctrl</kbd>+<kbd>V</kbd>.
+2. **The pipeline reads it** — native text when the file has it (PDF, DOCX, XLSX, XML…), page images for photos and scanned PDFs.
+3. **A vision LLM extracts the fields** into a strict schema: document type & number, dates, issuer, customer, line items, subtotal, tax, total, withholding (*detracción*), currency and payment method.
+4. **Deterministic checks validate the math** — line totals, items vs subtotal, subtotal + tax = total, tax rate, withholding, **RUC check digit**, date formats — and flag the fields that need a human look.
+5. **The form fills itself**, field by field. Edit anything, then export to **Excel** or **JSON**, copy it, or save it to the built-in **history**.
+
+It was built with Peruvian documents in mind (*facturas*, *boletas*, RUC/DNI, IGV, SUNAT UBL XML), but works with invoices in any language and currency.
+
+## Features
+
+| | |
+|---|---|
+| 📄 **17 input formats** | PDF, scanned PDF, JPG, PNG, WEBP, GIF, BMP, TIFF (multi-page), HEIC (iPhone photos), DOCX, XLSX, CSV/TSV, XML (UBL e-invoices), JSON, HTML, TXT/MD and `.eml` e-mails **with their attachments** |
+| 👁️ **Automatic OCR-free vision** | Scanned PDFs and photos are rendered, auto-rotated (EXIF), downscaled and sent to a vision model — no Tesseract needed |
+| 🧠 **LangGraph pipeline** | `load → clean → extract → validate`, with per-step timings streamed to the UI as live progress |
+| ✅ **Validation layer** | Math, tax-rate, withholding and RUC checksum checks + a completeness score, so you know what to trust |
+| ⚡ **Modern UI, zero build** | Vanilla JS/CSS: drag & drop, paste, document preview, animated autofill, editable line items, recalculation, dark mode, responsive |
+| 💾 **History & export** | SQLite history (no DB server needed), styled Excel export, JSON download / copy |
+| 🔌 **Any OpenAI-compatible model** | OpenAI, Azure OpenAI, OpenRouter, Ollama… via `OPENAI_BASE_URL` |
+| 🧪 **Tested** | 30+ tests over real sample files, API and LLM request shape (mocked, no key needed) + CI on Python 3.11–3.13 |
+
+## Quick start
+
+> Requirements: Python 3.11+ and an OpenAI API key (or any OpenAI-compatible endpoint with a vision model).
+
+```bash
+git clone https://github.com/LeonAchata/InvoiceParser-AI.git
+cd InvoiceParser-AI
+
+python -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+
+cp .env.example .env               # then set OPENAI_API_KEY
+uvicorn app.main:app --reload
+```
+
+Open **http://localhost:8000** and click one of the sample documents — or drop your own.
+Interactive API docs live at **http://localhost:8000/api/docs**.
+
+### With Docker
+
+```bash
+cp .env.example .env               # set OPENAI_API_KEY
+docker compose up --build
+```
+
+History is persisted in the `invoice-data` volume.
+
+## Try it with the samples
+
+The [`samples/`](samples) folder contains **fictitious** documents covering every loader (regenerate them with `python scripts/generate_samples.py`):
+
+| File | What it exercises |
+|---|---|
+| `factura-electronica.pdf` | Digital PDF with native text, IGV and *detracción* |
+| `factura-escaneada.pdf` | Image-only PDF → vision path |
+| `boleta-foto.jpg` | Tilted, noisy photo of a *boleta* → vision path |
+| `invoice-northwind.docx` | English invoice with a table, discount and US sales tax |
+| `factura-mar-azul.xlsx` | Invoice laid out in a spreadsheet, USD |
+| `factura-ubl-sunat.xml` | SUNAT UBL 2.1 e-invoice (signature stripped before prompting) |
+| `email-con-factura.eml` | E-mail whose PDF attachment is extracted recursively |
+
+## How it works
+
+```mermaid
+flowchart LR
+    A[Upload<br/>any format] --> B{detect_format<br/>extension + magic bytes}
+    B -->|PDF, DOCX, XLSX,<br/>CSV, XML, HTML, EML| C[Native text]
+    B -->|Photos, scans,<br/>image-only PDFs| D[Page images<br/>rotate · flatten · resize]
+    C --> E[clean]
+    D --> E
+    E --> F[extract<br/>vision LLM · JSON mode]
+    F --> G[validate<br/>Pydantic + math & RUC checks]
+    G --> H[Auto-filled form<br/>Excel · JSON · History]
+```
+
+- **Loaders** ([`app/loaders/`](app/loaders)) turn any file into a `LoadedDocument` holding text, images or both. A PDF is treated as scanned when its pages have too little extractable text; a DOCX with no text sends its embedded pictures; an `.eml` recursively loads its attachments.
+- **Pipeline** ([`app/pipeline/graph.py`](app/pipeline/graph.py)) is a LangGraph `StateGraph`. `astream` updates are forwarded to the job so the UI stepper shows the real current step.
+- **Schema** ([`app/schemas.py`](app/schemas.py)) normalizes what models tend to return: `"S/ 1,500.00"` → `1500.0`, `"1.500,50"` → `1500.5`, `factura` → `INVOICE`, `S/` → `PEN`, `contado` → `CASH`…
+- **Validation** ([`app/pipeline/validation.py`](app/pipeline/validation.py)) is plain, deterministic Python — the LLM extracts, code verifies.
+
+## API
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/extract` | Upload a file (`multipart/form-data`, field `file`). Returns a job. Add `?wait=true` to get the result in the same call |
+| `GET` | `/api/jobs/{id}` | Job status: `queued` · `processing` (with current `step`) · `completed` (with `result`) · `failed` (with `error`) |
+| `GET` | `/api/formats` | Supported extensions and size limit |
+| `POST` | `/api/export/xlsx` | `{data, filename}` → styled Excel file |
+| `GET` `POST` | `/api/documents` | List / save documents in the history |
+| `GET` `DELETE` | `/api/documents/{id}` | Get / delete a saved document |
+| `GET` | `/api/health` | Status, model and active jobs |
+
+```bash
+curl -F "file=@samples/boleta-foto.jpg" "http://localhost:8000/api/extract?wait=true"
+```
+
+<details>
+<summary>Example response (trimmed)</summary>
+
+```json
+{
+  "id": "4f0c…",
+  "status": "completed",
+  "result": {
+    "data": {
+      "document_type": "RECEIPT",
+      "document_number": "B002-00018733",
+      "issue_date": "2026-09-03",
+      "currency": "PEN",
+      "payment_method": "YAPE",
+      "issuer":   { "tax_id": "10456789019", "name": "BODEGA DOÑA ROSA", "address": "Jr. Ayacucho 318", "city": "Cercado - Arequipa" },
+      "customer": { "tax_id": "45781236", "name": "JUAN CARLOS TORRES VEGA", "address": null, "city": null },
+      "items": [
+        { "description": "Leche Gloria 1L", "quantity": 2, "unit_price": 5.9, "amount": 11.8 }
+      ],
+      "subtotal": 45.08, "tax": 8.12, "tax_rate": 18, "total": 53.2, "withholding": null
+    },
+    "checks": [
+      { "id": "total_math", "label": "Subtotal + tax = total", "status": "pass", "detail": "Expected 53.20", "field": "total" },
+      { "id": "issuer_ruc", "label": "Issuer tax ID", "status": "pass", "detail": "Valid RUC 10456789019", "field": "issuer.tax_id" }
+    ],
+    "completeness": 1.0,
+    "document": { "format": "jpeg", "method": "vision", "pages": 1, "images_sent": 1 },
+    "usage": { "prompt": 1530, "completion": 380, "total": 1910, "model": "gpt-4.1-mini" },
+    "timings": { "load": 0.04, "clean": 0.0, "extract": 3.1, "validate": 0.0 }
+  }
+}
+```
+</details>
+
+## Configuration
+
+All settings are environment variables (see [`.env.example`](.env.example)):
+
+| Variable | Default | Description |
+|---|---|---|
+| `OPENAI_API_KEY` | — | **Required** for extraction |
+| `OPENAI_BASE_URL` | — | Any OpenAI-compatible endpoint (Azure, OpenRouter, Ollama `http://localhost:11434/v1`…) |
+| `LLM_MODEL` | `gpt-4.1-mini` | Must support images to read photos / scans |
+| `LLM_TEMPERATURE` | `0` | Leave empty for reasoning models that reject the parameter |
+| `MAX_FILE_SIZE_MB` | `15` | Upload limit |
+| `MAX_PAGES` | `5` | Pages sent to the model per document |
+| `IMAGE_MAX_SIDE` | `2000` | Images are downscaled to this many pixels |
+| `DATABASE_PATH` | `./data/invoices.db` | SQLite history file |
+| `CORS_ORIGINS` | `*` | Comma-separated list, for when the UI is hosted elsewhere |
+
+## Project structure
+
+```
+app/
+├── main.py            FastAPI app: REST API under /api, web UI at /
+├── config.py          Settings (pydantic-settings)
+├── schemas.py         InvoiceData schema + normalization of LLM output
+├── jobs.py            Background jobs with live step tracking
+├── storage.py         SQLite history
+├── excel.py           Styled Excel export
+├── loaders/           One loader per format family + format detection
+│   ├── pdf.py         native text or rendered pages for scans
+│   ├── image.py       EXIF rotation, transparency, resize, HEIC
+│   ├── office.py      DOCX (tables, headers, embedded images), XLSX, CSV
+│   └── text.py        TXT, HTML, XML (UBL), JSON, EML (+ attachments)
+└── pipeline/
+    ├── graph.py       LangGraph: load → clean → extract → validate
+    ├── llm.py         OpenAI-compatible vision call in JSON mode
+    ├── prompts.py     Extraction prompt
+    └── validation.py  Math, tax, withholding, RUC and date checks
+frontend/              index.html · styles.css · app.js (no build step)
+samples/               Fictitious documents in every supported format
+scripts/               generate_samples.py
+tests/                 pytest suite (no API key required)
+```
+
+## Development
+
+```bash
+pip install -r requirements-dev.txt
+pytest                 # runs fully offline: the LLM is mocked
+ruff check . && ruff format --check .
+```
+
+The UI can also be served separately (e.g. from a static host): point it to the API with `?api=https://your-api.example.com` and set `CORS_ORIGINS`.
+
+## Limitations
+
+- Jobs are kept in memory — fine for a single process; use a queue (Redis, Celery…) for multi-worker deployments.
+- Only the first `MAX_PAGES` pages are sent to the model.
+- Legacy binary formats (`.doc`, `.xls`) are not supported; save them as `.docx` / `.xlsx`.
+- Always review the extracted data: the validation checks catch inconsistent numbers, not every possible mistake.
+
+## Roadmap
+
+- [ ] Batch upload (many documents → one spreadsheet)
+- [ ] Per-field confidence and bounding boxes on the preview
+- [ ] Custom extraction schemas defined from the UI
+- [ ] Duplicate detection in the history
+
+## License & author
+
+Personal portfolio project — free to use for learning purposes. All sample documents are fictitious.
+
+Made by **Leon Achata** · [@LeonAchata](https://github.com/LeonAchata)
+
+<p align="center"><img src="docs/screenshot-dark.png" alt="Dark mode" width="80%"></p>

@@ -1,0 +1,13 @@
+services:
+  invoiceparser:
+    build: .
+    image: invoiceparser-ai
+    ports:
+      - "8000:8000"
+    env_file: .env
+    volumes:
+      - invoice-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  invoice-data:

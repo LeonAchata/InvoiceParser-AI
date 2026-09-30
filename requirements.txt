@@ -1,12 +1,18 @@
-fastapi==0.118.0
-python-dotenv==1.1.1
-langgraph==0.6.8
-pydantic-settings==2.11.0
-PyMuPDF==1.26.4
-openai==2.1.0
-openpyxl==3.1.5
-asyncpg==0.30.0
-python-multipart==0.0.20
-uvicorn==0.37.0 
-pdfplumber==0.11.4
-PyPDF2==3.0.1
+# API
+fastapi>=0.115,<1
+uvicorn[standard]>=0.30
+python-multipart>=0.0.9
+pydantic>=2.7,<3
+pydantic-settings>=2.3
+python-dotenv>=1.0
+
+# AI pipeline
+langgraph>=0.2
+openai>=1.40
+
+# Document loaders
+pymupdf>=1.24
+python-docx>=1.1
+openpyxl>=3.1
+pillow>=10.3
+pillow-heif>=0.16

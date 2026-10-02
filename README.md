@@ -1,6 +1,6 @@
 <div align="center">
 
-# ✨ InvoiceParser AI
+# InvoiceParser AI
 
 **Drop an invoice, receipt or ticket in (almost) any format and watch an AI fill the form for you.**
 
@@ -34,13 +34,13 @@ It was built with Peruvian documents in mind (*facturas*, *boletas*, RUC/DNI, IG
 | | |
 |---|---|
 | 📄 **17 input formats** | PDF, scanned PDF, JPG, PNG, WEBP, GIF, BMP, TIFF (multi-page), HEIC (iPhone photos), DOCX, XLSX, CSV/TSV, XML (UBL e-invoices), JSON, HTML, TXT/MD and `.eml` e-mails **with their attachments** |
-| 👁️ **Automatic OCR-free vision** | Scanned PDFs and photos are rendered, auto-rotated (EXIF), downscaled and sent to a vision model — no Tesseract needed |
-| 🧠 **LangGraph pipeline** | `load → clean → extract → validate`, with per-step timings streamed to the UI as live progress |
-| ✅ **Validation layer** | Math, tax-rate, withholding and RUC checksum checks + a completeness score, so you know what to trust |
-| ⚡ **Modern UI, zero build** | Vanilla JS/CSS: drag & drop, paste, document preview, animated autofill, editable line items, recalculation, dark mode, responsive |
-| 💾 **History & export** | SQLite history (no DB server needed), styled Excel export, JSON download / copy |
-| 🔌 **Any OpenAI-compatible model** | OpenAI, Azure OpenAI, OpenRouter, Ollama… via `OPENAI_BASE_URL` |
-| 🧪 **Tested** | 30+ tests over real sample files, API and LLM request shape (mocked, no key needed) + CI on Python 3.11–3.13 |
+| **Automatic OCR-free vision** | Scanned PDFs and photos are rendered, auto-rotated (EXIF), downscaled and sent to a vision model — no Tesseract needed |
+| **LangGraph pipeline** | `load → clean → extract → validate`, with per-step timings streamed to the UI as live progress |
+| **Validation layer** | Math, tax-rate, withholding and RUC checksum checks + a completeness score, so you know what to trust |
+| **Modern UI, zero build** | Vanilla JS/CSS: drag & drop, paste, document preview, animated autofill, editable line items, recalculation, dark mode, responsive |
+| **History & export** | SQLite history (no DB server needed), styled Excel export, JSON download / copy |
+| **Any OpenAI-compatible model** | OpenAI, Azure OpenAI, OpenRouter, Ollama… via `OPENAI_BASE_URL` |
+| **Tested** | 30+ tests over real sample files, API and LLM request shape (mocked, no key needed) + CI on Python 3.11–3.13 |
 
 ## Quick start
 
@@ -219,8 +219,9 @@ The UI can also be served separately (e.g. from a static host): point it to the 
 - [ ] Custom extraction schemas defined from the UI
 - [ ] Duplicate detection in the history
 
-## License & author
+## Author
 
+- Leon Achata
 Personal portfolio project — free to use for learning purposes. All sample documents are fictitious.
 
 Made by **Leon Achata** · [@LeonAchata](https://github.com/LeonAchata)
